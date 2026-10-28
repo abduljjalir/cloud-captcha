@@ -1,0 +1,119 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Captcha Cloud Lab</title>
+</head>
+
+<body style="font-family: Arial, sans-serif; text-align: center; padding-top: 50px;">
+
+    <h2>I need to verify you are a human, not a robot</h2>
+    <h4>(I am a robot though 😜)</h4>
+
+    <img
+        src="https://cdn-icons-png.flaticon.com/512/4712/4712027.png"
+        width="100"
+        alt="Robot image"
+    >
+
+    <br><br>
+
+    <img
+        id="captcha_img"
+        src="/static/captcha.png"
+        width="280"
+        height="90"
+        style="border: 1px solid #ccc; border-radius: 8px;"
+        alt="CAPTCHA challenge"
+    >
+
+    <br><br>
+
+    <button onclick="reloadCaptcha()">
+        🔄 Reload Image
+    </button>
+
+    <br><br>
+
+    <input
+        id="captcha_input"
+        type="text"
+        placeholder="Enter text here"
+        maxlength="6"
+        autocomplete="off"
+        style="padding: 10px; font-size: 16px;"
+    >
+
+    <button onclick="verify()" style="padding: 10px 20px; cursor: pointer;">
+        Verify
+    </button>
+
+    <h3 id="result" aria-live="polite"></h3>
+
+    <script>
+        // The frontend and backend use the same Flask server.
+        const BASE_URL = "";
+
+        // Verify the user's answer.
+        async function verify() {
+            const inputField = document.getElementById("captcha_input");
+            const resultText = document.getElementById("result");
+
+            try {
+                const res = await fetch(`${BASE_URL}/verify`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        captcha: inputField.value
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok && data.status === "verified") {
+                    resultText.innerText = "✅ Success! You are human.";
+                    resultText.style.color = "green";
+                } else {
+                    resultText.innerText = "❌ Failed. Try again.";
+                    resultText.style.color = "red";
+
+                    inputField.value = "";
+                    await reloadCaptcha();
+                }
+            } catch (error) {
+                resultText.innerText = "⚠️ Cannot connect to the server.";
+                resultText.style.color = "red";
+            }
+        }
+
+        // Generate a new CAPTCHA and refresh its image.
+        async function reloadCaptcha() {
+            const img = document.getElementById("captcha_img");
+            const resultText = document.getElementById("result");
+
+            try {
+                const res = await fetch(`${BASE_URL}/captcha`);
+
+                if (!res.ok) {
+                    throw new Error("CAPTCHA generation failed");
+                }
+
+                img.src = `${BASE_URL}/static/captcha.png?t=${Date.now()}`;
+                resultText.innerText = "";
+                document.getElementById("captcha_input").value = "";
+            } catch (error) {
+                resultText.innerText = "⚠️ Could not load CAPTCHA.";
+                resultText.style.color = "red";
+            }
+        }
+
+        // Generate the first CAPTCHA when the page opens.
+        window.addEventListener("DOMContentLoaded", reloadCaptcha);
+    </script>
+
+</body>
+</html>

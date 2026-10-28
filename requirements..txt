@@ -1,0 +1,6 @@
+
+Flask
+captcha
+Pillow
+flask-cors
+gunicorn
